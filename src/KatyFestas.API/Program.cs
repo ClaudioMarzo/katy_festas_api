@@ -18,8 +18,12 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ═══════════════════ BANCO DE DADOS ═══════════════════
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string não encontrada");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // ═══════════════════ UNIT OF WORK & REPOSITORIES ═══════════════════
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -29,7 +33,10 @@ builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // ═══════════════════ JWT AUTHENTICATION ═══════════════════
-var jwtKey = builder.Configuration["Jwt:SecretKey"]!;
+var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+    ?? builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey não encontrada");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -44,7 +51,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // ═══════════════════ ENCRYPTION SERVICE ═══════════════════
-var encryptionKey = builder.Configuration["Encryption:Key"]!;
+var encryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY")
+    ?? builder.Configuration["Encryption:Key"]
+    ?? throw new InvalidOperationException("Encryption Key não encontrada");
+
 builder.Services.AddSingleton<IEncryptionService>(new EncryptionService(encryptionKey));
 
 // ═══════════════════ FLUENTVALIDATION ═══════════════════
