@@ -10,14 +10,25 @@ using KatyFestas.Infrastructure.Persistence;
 using KatyFestas.Domain.Interfaces.Services;
 using KatyFestas.Application.Validators.Item;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using KatyFestas.Domain.Interfaces;
+using KatyFestas.Application.Interfaces.Services;
+using KatyFestas.Application.Services;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Banco de Dados ───────────────────────────────────────────
+// ═══════════════════ BANCO DE DADOS ═══════════════════
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ── JWT ─────────────────────────────────────────────────────
+// ═══════════════════ UNIT OF WORK & REPOSITORIES ═══════════════════
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// ═══════════════════ APPLICATION SERVICES ═══════════════════
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+// ═══════════════════ JWT AUTHENTICATION ═══════════════════
 var jwtKey = builder.Configuration["Jwt:SecretKey"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -32,15 +43,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ── Encryption ─────────────────────────────────────────────────
+// ═══════════════════ ENCRYPTION SERVICE ═══════════════════
 var encryptionKey = builder.Configuration["Encryption:Key"]!;
 builder.Services.AddSingleton<IEncryptionService>(new EncryptionService(encryptionKey));
 
-// ── FluentValidation ────────────────────────────────────────
+// ═══════════════════ FLUENTVALIDATION ═══════════════════
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateItemValidator>();
 
-// ── Rate Limiting ────────────────────────────────────────────
+// ═══════════════════ RATE LIMITING ═══════════════════
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("fixed", limiterOptions =>
@@ -50,16 +61,16 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// ── Health Checks ────────────────────────────────────────────
+// ═══════════════════ HEALTH CHECKS ═══════════════════
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
-// ── Controllers + Swagger ────────────────────────────────────
+// ═══════════════════ CONTROLLERS + SCALAR API DOCS ═══════════════════
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
-// ── CORS ─────────────────────────────────────────────────────
+// ═══════════════════ CORS ═══════════════════
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -68,13 +79,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ── Middlewares ──────────────────────────────────────────────
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// ═══════════════════ MIDDLEWARES  ═══════════════════
+app.UseMiddleware<CorrelationIdMiddleware>();  //  Gera CorrelationId
+app.UseMiddleware<ExceptionHandlingMiddleware>(); // Captura exceções
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseCors("AllowAll");
