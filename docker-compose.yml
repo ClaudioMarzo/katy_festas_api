@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: katyfestas_db
+    environment:
+      POSTGRES_DB: katyfestas
+      POSTGRES_USER: katyfestas
+      POSTGRES_PASSWORD: katyfestas123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - katyfestas_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: katyfestas_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - katyfestas_network
+
+  api:
+    build:
+      context: .
+      dockerfile: src/KatyFestas.API/Dockerfile
+    container_name: katyfestas_api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=katyfestas;Username=katyfestas;Password=katyfestas123
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=sua-chave-secreta-muito-longa-aqui-minimo-32-caracteres
+      - Jwt__ExpiresInDays=7
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - katyfestas_network
+
+volumes:
+  postgres_data:
+
+networks:
+  katyfestas_network:
+    driver: bridge

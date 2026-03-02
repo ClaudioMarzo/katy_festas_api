@@ -1,0 +1,157 @@
+// Katy Festas — Database Schema
+// v1.0 — MVP
+// PostgreSQL | Use https://dbdiagram.io to visualize
+
+Table Store {
+  id uuid [PK]
+  name varchar(100)
+  whatsapp_phone varchar(20)
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table Category {
+  id uuid [PK]
+  store_id uuid [ref: > Store.id]
+  name varchar(100)
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+
+  indexes {
+    store_id [name: 'idx_category_store_id']
+  }
+}
+
+Table Item {
+  id uuid [PK]
+  store_id uuid [ref: > Store.id]
+  category_id uuid [ref: > Category.id]
+  name varchar(150)
+  description text
+  price decimal(10,2)
+  stock_quantity integer
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+
+  indexes {
+    store_id [name: 'idx_item_store_id']
+    category_id [name: 'idx_item_category_id']
+  }
+}
+
+Table ItemPhoto {
+  id uuid [PK]
+  item_id uuid [ref: > Item.id]
+  url varchar(500)
+  order integer
+  created_at timestamp
+
+  indexes {
+    item_id [name: 'idx_item_photo_item_id']
+  }
+}
+
+Table Partner {
+  id uuid [PK]
+  name varchar(100)
+  description text
+  contact varchar(100)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table PartnerPhoto {
+  id uuid [PK]
+  partner_id uuid [ref: > Partner.id]
+  url varchar(500)
+  order integer
+  created_at timestamp
+
+  indexes {
+    partner_id [name: 'idx_partner_photo_partner_id']
+  }
+}
+
+Table User {
+  id uuid [PK]
+  store_id uuid [ref: > Store.id]
+  name varchar(100)
+  email varchar(150) [unique]
+  password_hash varchar(255)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table Customer {
+  id uuid [PK]
+  name varchar(100)
+  email varchar(150)
+  phone varchar(20)
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table Estimate {
+  id uuid [PK]
+  store_id uuid [ref: > Store.id]
+  customer_name varchar(100)
+  customer_email varchar(150)
+  customer_phone varchar(20)
+  event_description text
+  event_forecast_date date
+  created_at timestamp
+
+  indexes {
+    store_id [name: 'idx_estimate_store_id']
+  }
+}
+
+Table EstimateItem {
+  id uuid [PK]
+  estimate_id uuid [ref: > Estimate.id]
+  item_id uuid [ref: > Item.id]
+  quantity integer
+  created_at timestamp
+}
+
+Table Rental {
+  id uuid [PK]
+  store_id uuid [ref: > Store.id]
+  customer_id uuid [ref: > Customer.id]
+  status Enum name {
+    Requested
+    InReview
+    Confirmed
+    Completed
+    Cancelled
+  } 
+  event_date date
+  notes text
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+
+  indexes {
+    store_id [name: 'idx_rental_store_id']
+    customer_id [name: 'idx_rental_customer_id']
+    status [name: 'idx_rental_status']
+  }
+}
+
+Table RentalItem {
+  id uuid [PK]
+  rental_id uuid [ref: > Rental.id]
+  item_id uuid [ref: > Item.id]
+  quantity integer
+  created_at timestamp
+}
