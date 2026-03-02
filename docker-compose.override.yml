@@ -1,0 +1,41 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: katyfestas
+      POSTGRES_USER: katyfestas
+      POSTGRES_PASSWORD: katyfestas123
+    ports:
+      - "5432:5432" 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U katyfestas"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  api:
+    build: 
+      context: .
+      dockerfile: src/KatyFestas.API/Dockerfile
+    image: katyfestas_api_dev:latest
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=katyfestas;Username=katyfestas;Password=katyfestas123
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=dev-secret-key-not-for-production-min-32-chars-here
+      - Jwt__ExpiresInDays=7
+      - Encryption__Key=QYIrgn7vbnryaGZyTfdkpmapGr9ajtJNuozVB5Zpa5M=
+    ports:
+      - "5000:8080" 
+      - "5001:8081" 
+    restart: "no"
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 3
