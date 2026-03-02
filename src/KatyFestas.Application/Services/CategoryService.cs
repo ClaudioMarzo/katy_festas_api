@@ -1,8 +1,8 @@
-using KatyFestas.Application.DTOs.Category;
-using KatyFestas.Application.Interfaces.Services;
 using KatyFestas.Domain.Entities;
 using KatyFestas.Domain.Exceptions;
 using KatyFestas.Domain.Interfaces;
+using KatyFestas.Application.DTOs.Category;
+using KatyFestas.Application.Interfaces.Services;
 
 namespace KatyFestas.Application.Services;
 
@@ -31,7 +31,6 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryResponseDto> CreateAsync(CreateCategoryDto dto)
     {
-        // Cria categoria
         var category = Category.Create(dto.StoreId, dto.Name);
 
         await _unitOfWork.Categories.AddAsync(category);

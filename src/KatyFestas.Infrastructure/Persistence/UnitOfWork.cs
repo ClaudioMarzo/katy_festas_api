@@ -10,6 +10,10 @@ public class UnitOfWork : IUnitOfWork
     private readonly AppDbContext _context;
     private IItemRepository? _items;
     private ICategoryRepository? _categories;
+    private ICustomerRepository? _customers;
+    private IUserRepository? _users;
+    private IRentalRepository? _rentals;
+    private IEstimateRepository? _estimates;
 
     public UnitOfWork(AppDbContext context)
     {
@@ -22,21 +26,21 @@ public class UnitOfWork : IUnitOfWork
     public ICategoryRepository Categories => 
         _categories ??= new CategoryRepository(_context);
 
-    // Pendente - Lançam NotImplementedException até criar os repositórios
-    public IRentalRepository Rentals => 
-        throw new NotImplementedException("RentalRepository será implementado em breve");
-
-    public IEstimateRepository Estimates => 
-        throw new NotImplementedException("EstimateRepository será implementado em breve");
-
-    public IPartnerRepository Partners => 
-        throw new NotImplementedException("PartnerRepository será implementado em breve");
-
     public ICustomerRepository Customers => 
-        throw new NotImplementedException("CustomerRepository será implementado em breve");
+        _customers ??= new CustomerRepository(_context);
 
     public IUserRepository Users => 
-        throw new NotImplementedException("UserRepository será implementado em breve");
+        _users ??= new UserRepository(_context);
+
+    public IRentalRepository Rentals => 
+        _rentals ??= new RentalRepository(_context);
+
+    public IEstimateRepository Estimates => 
+        _estimates ??= new EstimateRepository(_context);
+
+    // Pendente - Partner será implementado futuramente
+    public IPartnerRepository Partners => 
+        throw new NotImplementedException("PartnerRepository será implementado em breve");
 
     public async Task<int> CommitAsync()
     {
