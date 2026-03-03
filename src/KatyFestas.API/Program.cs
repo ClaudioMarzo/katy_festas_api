@@ -73,7 +73,7 @@ builder.Services.AddRateLimiter(options =>
 
 // ═══════════════════ HEALTH CHECKS ═══════════════════
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+    .AddNpgSql(connectionString);
 
 // ═══════════════════ CONTROLLERS + SCALAR API DOCS ═══════════════════
 builder.Services.AddControllers();
