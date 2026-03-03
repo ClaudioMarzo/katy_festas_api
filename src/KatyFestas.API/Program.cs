@@ -13,6 +13,7 @@ using KatyFestas.Infrastructure.Persistence;
 using KatyFestas.Domain.Interfaces.Services;
 using KatyFestas.Application.Validators.Item;
 using KatyFestas.Application.Interfaces.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -95,6 +96,12 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+
+// ═══════════════════ FORWARDED HEADERS (Railway/Proxy) ═══════════════════
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // ═══════════════════ MIDDLEWARES  ═══════════════════
 app.UseMiddleware<CorrelationIdMiddleware>();  //  Gera CorrelationId
