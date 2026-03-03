@@ -1,4 +1,5 @@
 using System.Text;
+using Npgsql;
 using FluentValidation;
 using Scalar.AspNetCore;
 using KatyFestas.API.Middlewares;
@@ -22,8 +23,11 @@ var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string não encontrada");
 
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(dataSource));
 
 // ═══════════════════ UNIT OF WORK & REPOSITORIES ═══════════════════
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
