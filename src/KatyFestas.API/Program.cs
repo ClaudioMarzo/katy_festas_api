@@ -84,27 +84,19 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, _) =>
     {
-        // Pega o scheme real (HTTPS atrás de proxy como Railway)
-        var request = context.ApplicationServices
-            .GetRequiredService<IHttpContextAccessor>()
-            .HttpContext?.Request;
+        var railwayDomain = Environment.GetEnvironmentVariable("RAILWAY_PUBLIC_DOMAIN");
 
-        if (request is not null)
+        if (!string.IsNullOrEmpty(railwayDomain))
         {
             document.Servers =
             [
-                new OpenApiServer 
-                { 
-                    Url = $"{request.Scheme}://{request.Host}" 
-                }
+                new OpenApiServer { Url = $"https://{railwayDomain}" }
             ];
         }
 
         return Task.CompletedTask;
     });
 });
-
-builder.Services.AddHttpContextAccessor();
 
 // ═══════════════════ CORS ═══════════════════
 builder.Services.AddCors(options =>
@@ -123,10 +115,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ═══════════════════ FORWARDED HEADERS (Railway/Proxy) ═══════════════════
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+};
+forwardedHeadersOptions.KnownProxies.Clear();
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 // ═══════════════════ MIDDLEWARES  ═══════════════════
 app.UseMiddleware<CorrelationIdMiddleware>();  //  Gera CorrelationId
