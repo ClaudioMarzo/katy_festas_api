@@ -15,6 +15,7 @@ using KatyFestas.Application.Validators.Item;
 using KatyFestas.Application.Interfaces.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,7 +80,31 @@ builder.Services.AddHealthChecks()
 // ═══════════════════ CONTROLLERS + SCALAR API DOCS ═══════════════════
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, _) =>
+    {
+        // Pega o scheme real (HTTPS atrás de proxy como Railway)
+        var request = context.ApplicationServices
+            .GetRequiredService<IHttpContextAccessor>()
+            .HttpContext?.Request;
+
+        if (request is not null)
+        {
+            document.Servers =
+            [
+                new OpenApiServer 
+                { 
+                    Url = $"{request.Scheme}://{request.Host}" 
+                }
+            ];
+        }
+
+        return Task.CompletedTask;
+    });
+});
+
+builder.Services.AddHttpContextAccessor();
 
 // ═══════════════════ CORS ═══════════════════
 builder.Services.AddCors(options =>
