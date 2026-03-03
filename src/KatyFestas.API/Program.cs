@@ -1,19 +1,19 @@
 using System.Text;
 using FluentValidation;
+using Scalar.AspNetCore;
 using KatyFestas.API.Middlewares;
 using FluentValidation.AspNetCore;
+using KatyFestas.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using KatyFestas.Application.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using KatyFestas.Infrastructure.Security;
 using KatyFestas.Infrastructure.Persistence;
 using KatyFestas.Domain.Interfaces.Services;
 using KatyFestas.Application.Validators.Item;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using KatyFestas.Domain.Interfaces;
 using KatyFestas.Application.Interfaces.Services;
-using KatyFestas.Application.Services;
-using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +88,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// ═══════════════════ AUTO MIGRATE ═══════════════════
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 // ═══════════════════ MIDDLEWARES  ═══════════════════
 app.UseMiddleware<CorrelationIdMiddleware>();  //  Gera CorrelationId
