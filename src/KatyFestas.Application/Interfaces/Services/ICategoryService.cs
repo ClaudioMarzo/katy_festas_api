@@ -20,7 +20,7 @@ public interface ICategoryService
     /// <summary>
     /// Cria uma nova categoria
     /// </summary>
-    Task<CategoryResponseDto> CreateAsync(CreateCategoryDto dto);
+    Task<CategoryResponseDto> CreateAsync(Guid storeId, CreateCategoryDto dto);
 
     /// <summary>
     /// Atualiza uma categoria existente

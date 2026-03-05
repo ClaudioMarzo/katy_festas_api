@@ -8,6 +8,7 @@ namespace KatyFestas.Infrastructure.Persistence;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
+    private IStoreRepository? _stores;
     private IItemRepository? _items;
     private ICategoryRepository? _categories;
     private ICustomerRepository? _customers;
@@ -19,6 +20,9 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
     }
+
+    public IStoreRepository Stores =>
+        _stores ??= new StoreRepository(_context);
 
     public IItemRepository Items => 
         _items ??= new ItemRepository(_context);

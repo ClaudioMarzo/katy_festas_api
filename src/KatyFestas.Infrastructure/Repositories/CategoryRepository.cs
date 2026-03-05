@@ -11,6 +11,13 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
     {
     }
 
+    public override async Task<Category?> GetByIdAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(x => x.Store)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
     public override async Task<IEnumerable<Category>> GetAllAsync()
     {
         return await _dbSet
@@ -31,5 +38,12 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
     public async Task<bool> ExistsAsync(Guid id)
     {
         return await _dbSet.AnyAsync(x => x.Id == id);
+    }
+
+    public async Task<bool> ExistsByNameInStoreAsync(Guid storeId, string name)
+    {
+        return await _dbSet.AnyAsync(x => x.StoreId == storeId 
+            && x.Name.ToLower() == name.ToLower()
+            && x.DeletedAt == null);
     }
 }

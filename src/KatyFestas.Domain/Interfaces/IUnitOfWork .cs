@@ -4,6 +4,7 @@ namespace KatyFestas.Domain.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
+    IStoreRepository Stores { get; }
     IItemRepository Items { get; }
     IRentalRepository Rentals { get; }
     IEstimateRepository Estimates { get; }

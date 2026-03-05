@@ -6,4 +6,5 @@ public interface ICategoryRepository : IBaseRepository<Category>
 {
     Task<IEnumerable<Category>> GetByStoreAsync(Guid storeId);
     Task<bool> ExistsAsync(Guid id);
+    Task<bool> ExistsByNameInStoreAsync(Guid storeId, string name);
 }

@@ -63,5 +63,8 @@ public class EstimateConfiguration : IEntityTypeConfiguration<Estimate>
             .WithOne(x => x.Estimate)
             .HasForeignKey(x => x.EstimateId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Query Filter: filtra estimates de lojas não deletadas
+        builder.HasQueryFilter(x => x.Store.DeletedAt == null);
     }
 }

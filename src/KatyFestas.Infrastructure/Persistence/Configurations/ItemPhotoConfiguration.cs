@@ -42,5 +42,8 @@ public class ItemPhotoConfiguration : IEntityTypeConfiguration<ItemPhoto>
             .WithMany(x => x.Photos)
             .HasForeignKey(x => x.ItemId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Query Filter: filtra fotos de itens não deletados
+        builder.HasQueryFilter(x => x.Item.DeletedAt == null);
     }
 }

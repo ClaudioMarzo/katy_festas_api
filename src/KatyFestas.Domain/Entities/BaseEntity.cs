@@ -10,9 +10,9 @@ public abstract class BaseEntity : Entity
     protected BaseEntity()
     {
         Id = Guid.NewGuid();
-        CreatedAt = DateTime.Now;
+        CreatedAt = DateTime.UtcNow;
     }
 
-    public void SetUpdatedAt() => UpdatedAt = DateTime.Now;
-    public void SetDeletedAt() => DeletedAt = DateTime.Now;
+    public void SetUpdatedAt() => UpdatedAt = DateTime.UtcNow;
+    public void SetDeletedAt() => DeletedAt = DateTime.UtcNow;
 }

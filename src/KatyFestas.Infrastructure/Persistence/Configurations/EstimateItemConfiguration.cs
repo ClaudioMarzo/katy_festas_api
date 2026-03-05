@@ -45,5 +45,8 @@ public class EstimateItemConfiguration : IEntityTypeConfiguration<EstimateItem>
             .WithMany()
             .HasForeignKey(x => x.ItemId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Query Filter: filtra estimate_items de itens não deletados
+        builder.HasQueryFilter(x => x.Item.DeletedAt == null);
     }
 }

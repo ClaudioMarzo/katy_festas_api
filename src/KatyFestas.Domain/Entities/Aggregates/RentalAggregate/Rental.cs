@@ -28,7 +28,7 @@ public class Rental : BaseEntity
             throw new DomainException("Id da loja é obrigatório.");
         if (customerId == Guid.Empty)
             throw new DomainException("Id do cliente é obrigatório.");
-        if (eventDate <= DateTime.Now)
+        if (eventDate <= DateTime.UtcNow)
             throw new DomainException("Data do evento deve ser no futuro.");
         return new Rental
         {

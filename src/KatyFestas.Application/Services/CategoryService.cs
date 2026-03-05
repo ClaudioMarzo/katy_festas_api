@@ -29,9 +29,13 @@ public class CategoryService : ICategoryService
         return categories.Select(MapToResponseDto);
     }
 
-    public async Task<CategoryResponseDto> CreateAsync(CreateCategoryDto dto)
+    public async Task<CategoryResponseDto> CreateAsync(Guid storeId, CreateCategoryDto dto)
     {
-        var category = Category.Create(dto.StoreId, dto.Name);
+        var exists = await _unitOfWork.Categories.ExistsByNameInStoreAsync(storeId, dto.Name);
+        if (exists)
+            throw new DomainException($"Já existe uma categoria com o nome '{dto.Name}' nesta loja.");
+
+        var category = Category.Create(storeId, dto.Name);
 
         await _unitOfWork.Categories.AddAsync(category);
         await _unitOfWork.CommitAsync();
