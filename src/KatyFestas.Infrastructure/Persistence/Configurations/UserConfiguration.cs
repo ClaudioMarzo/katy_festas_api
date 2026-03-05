@@ -23,6 +23,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         
         builder.Property(x => x.Email)
             .HasColumnName("email")
+            .IsRequired()
             .HasMaxLength(200);
         
         builder.Property(x => x.PasswordHash)
@@ -55,7 +56,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(x => x.Email)
             .IsUnique()
             .HasDatabaseName("ix_users_email")
-            .HasFilter("email IS NOT NULL AND deleted_at IS NULL");
+            .HasFilter("deleted_at IS NULL");
         
         builder.HasIndex(x => x.StoreId)
             .HasDatabaseName("ix_users_store_id");

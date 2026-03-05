@@ -8,7 +8,7 @@ public class User : BaseEntity
 {
     // Propriedades
     public string Name { get; private set; } = string.Empty;
-    public string? Email { get; private set; }
+    public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
 
@@ -19,11 +19,13 @@ public class User : BaseEntity
 
     protected User() { }
 
-    public static User Create(Guid storeId, string name, string? email, string passwordHash, IEncryptionService encryptionService)
+    public static User Create(Guid storeId, string name, string email, string passwordHash, IEncryptionService encryptionService)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("O nome do usuário é obrigatório.");
-        if (!string.IsNullOrWhiteSpace(email) && !EmailEvaluateAttribute.IsValid(email))
+        if (string.IsNullOrWhiteSpace(email))
+            throw new DomainException("O email do usuário é obrigatório.");
+        if (!EmailEvaluateAttribute.IsValid(email))
             throw new DomainException("Email está inválido.");
         if (string.IsNullOrWhiteSpace(passwordHash))
             throw new DomainException("A senha do usuário é obrigatória.");
@@ -31,7 +33,7 @@ public class User : BaseEntity
         {
             StoreId = storeId,
             Name = name,
-            Email = string.IsNullOrWhiteSpace(email) ? null : email.ToLowerInvariant().Trim(),
+            Email = email.ToLowerInvariant().Trim(),
             PasswordHash = encryptionService.Encrypt(passwordHash),
             IsActive = true
         };

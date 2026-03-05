@@ -1,7 +1,8 @@
-using KatyFestas.Application.DTOs.Category;
-using KatyFestas.Application.Interfaces.Services;
 using KatyFestas.API.Responses;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using KatyFestas.Application.DTOs.Category;
+using KatyFestas.Application.Interfaces.Services;
 
 namespace KatyFestas.API.Controllers.Admin;
 
@@ -11,10 +12,9 @@ namespace KatyFestas.API.Controllers.Admin;
 [ApiController]
 [Route("api/v1/admin/categories")]
 [Produces("application/json")]
-// [Authorize(Roles = "Admin")] // Descomentar quando implementar autenticação
-public class AdminCategoriesController : ControllerBase
+[Authorize(Roles = "Admin")] 
+public class AdminCategoriesController : AdminBaseController
 {
-    private const string CorrelationIdHeader = "X-Correlation-Id";
     private readonly ICategoryService _categoryService;
 
     public AdminCategoriesController(ICategoryService categoryService)
@@ -23,14 +23,14 @@ public class AdminCategoriesController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as categorias de uma loja
+    /// Lista todas as categorias da loja do usuário autenticado
     /// </summary>
-    /// <param name="storeId">ID da loja</param>
     /// <returns>Lista de categorias</returns>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryResponseDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromQuery] Guid storeId)
+    public async Task<IActionResult> GetAll()
     {
+        var storeId = GetStoreId();
         var categories = await _categoryService.GetByStoreAsync(storeId);
         var correlationId = GetCorrelationId();
 
@@ -75,7 +75,8 @@ public class AdminCategoriesController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateCategoryDto dto)
     {
-        var category = await _categoryService.CreateAsync(dto);
+        var storeId = GetStoreId();
+        var category = await _categoryService.CreateAsync(storeId, dto);
         var correlationId = GetCorrelationId();
 
         var response = new ApiResponse<CategoryResponseDto>(
@@ -135,10 +136,5 @@ public class AdminCategoriesController : ControllerBase
         );
 
         return Ok(response);
-    }
-
-    private string? GetCorrelationId()
-    {
-        return HttpContext.Items[CorrelationIdHeader]?.ToString();
     }
 }

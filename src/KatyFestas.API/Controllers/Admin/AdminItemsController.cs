@@ -1,8 +1,9 @@
-using KatyFestas.Application.Common;
-using KatyFestas.Application.DTOs.Item;
-using KatyFestas.Application.Interfaces.Services;
 using KatyFestas.API.Responses;
 using Microsoft.AspNetCore.Mvc;
+using KatyFestas.Application.Common;
+using KatyFestas.Application.DTOs.Item;
+using Microsoft.AspNetCore.Authorization;
+using KatyFestas.Application.Interfaces.Services;
 
 namespace KatyFestas.API.Controllers.Admin;
 
@@ -12,7 +13,7 @@ namespace KatyFestas.API.Controllers.Admin;
 [ApiController]
 [Route("api/v1/admin/items")]
 [Produces("application/json")]
-// [Authorize(Roles = "Admin")] // Descomentar quando implementar autenticação
+[Authorize(Roles = "Admin")]
 public class AdminItemsController : ControllerBase
 {
     private const string CorrelationIdHeader = "X-Correlation-Id";

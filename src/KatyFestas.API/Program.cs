@@ -1,21 +1,20 @@
 using System.Text;
 using FluentValidation;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using KatyFestas.API.Middlewares;
-using FluentValidation.AspNetCore;
 using KatyFestas.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using KatyFestas.Application.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using KatyFestas.Infrastructure.Security;
+using Microsoft.AspNetCore.HttpOverrides;
 using KatyFestas.Infrastructure.Persistence;
 using KatyFestas.Domain.Interfaces.Services;
 using KatyFestas.Application.Validators.Item;
 using KatyFestas.Application.Interfaces.Services;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,11 +32,17 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // ═══════════════════ APPLICATION SERVICES ═══════════════════
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ═══════════════════ JWT AUTHENTICATION ═══════════════════
-var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
-    ?? builder.Configuration["Jwt:SecretKey"]
-    ?? throw new InvalidOperationException("JWT SecretKey não encontrada");
+var jwtSettings = builder.Configuration
+    .GetSection(JwtSettings.SectionName)
+    .Get<JwtSettings>() ?? new JwtSettings();
+
+if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+    throw new InvalidOperationException("JWT SecretKey não encontrada. Configure em appsettings ou na variável de ambiente JWT_SECRET_KEY.");
+
+builder.Services.AddSingleton<ITokenService>(new TokenService(jwtSettings.SecretKey, jwtSettings.ExpiresInDays));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -48,7 +53,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
         };
     });
 
@@ -60,7 +65,6 @@ var encryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY")
 builder.Services.AddSingleton<IEncryptionService>(new EncryptionService(encryptionKey));
 
 // ═══════════════════ FLUENTVALIDATION ═══════════════════
-builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateItemValidator>();
 
 // ═══════════════════ RATE LIMITING ═══════════════════
@@ -78,12 +82,33 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString);
 
 // ═══════════════════ CONTROLLERS + SCALAR API DOCS ═══════════════════
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<KatyFestas.API.Filters.GuidValidationFilter>();
+    options.Filters.Add<KatyFestas.API.Filters.FluentValidationFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, _) =>
     {
+        // Configurar Bearer Auth no Scalar
+        var components = document.Components ??= new OpenApiComponents();
+        components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Insira o token JWT"
+        };
+
+        document.Security ??= [];
+        document.Security.Add(new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+        });
+
         var railwayDomain = Environment.GetEnvironmentVariable("RAILWAY_PUBLIC_DOMAIN");
 
         if (!string.IsNullOrEmpty(railwayDomain))
